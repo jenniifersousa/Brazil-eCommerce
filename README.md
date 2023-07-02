@@ -1,5 +1,5 @@
 # Brazil-eCommerce
-Machine Learning analysis for an eCommerce storefront. 
+This project includes Machine Learning analysis for an eCommerce storefront. 
 - Exploratory Analysis through visualizations
 - Geospacial analysis using shapefile
 - Regression analysis
