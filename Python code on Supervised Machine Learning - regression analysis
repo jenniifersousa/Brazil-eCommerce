@@ -1,0 +1,279 @@
+Python code on Supervised Machine Learning - regression analysis
+
+
+1. Importing libraries and data
+#Importing Libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib
+import os
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+# This option ensures that the graphs you create are displayed within the notebook without the need to "call" them specifically.
+
+%matplotlib inline
+path = '/Users/ronaldcameron/Documents/Data Analytics/Achievement 6 - Data/Data/df_all.pkl'
+# Import the ecommerce data
+
+df = pd.read_csv(os.path.join(path, '/Users/ronaldcameron/Documents/Data Analytics/Achievement 6 - Data/sales_pivot.csv'))
+df_all = pd.read_pickle(r'/Users/ronaldcameron/Documents/Data Analytics/Achievement 6 - Data/Data/df_all.pkl')
+2. Data cleaning
+df.columns 
+Index(['Sales by Month', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+       '11', '12'],
+      dtype='object')
+df_all.columns
+Index(['order_id', 'customer_id', 'order_status',
+       'order_delivered_customer_date', 'payment_value', 'product_id',
+       'seller_id', 'price', 'product_category_name', 'product_photos_qty',
+       'customer_unique_id', 'customer_zip_code_prefix', 'customer_city',
+       'customer_state', 'geolocation_lat', 'geolocation_lng',
+       'geolocation_city', 'geolocation_state'],
+      dtype='object')
+df_all.head()
+order_id	customer_id	order_status	order_delivered_customer_date	payment_value	product_id	seller_id	price	product_category_name	product_photos_qty	customer_unique_id	customer_zip_code_prefix	customer_city	customer_state	geolocation_lat	geolocation_lng	geolocation_city	geolocation_state
+0	e481f51cbdc54678b7cc49136f2d6af7	9ef432eb6251297304e76186b10a928d	delivered	2017-10-10 21:25:13	18.12	87285b34884572647811a353c7ac498a	3504c0cb71d7fa48d967e0e4c94d59d9	29.99	utilidades_domesticas	4.0	7c396fd4830fd04220f754e42b4e5bff	3149	sao paulo	SP	-23.574809	-46.587471	sao paulo	SP
+1	e481f51cbdc54678b7cc49136f2d6af7	9ef432eb6251297304e76186b10a928d	delivered	2017-10-10 21:25:13	18.12	87285b34884572647811a353c7ac498a	3504c0cb71d7fa48d967e0e4c94d59d9	29.99	utilidades_domesticas	4.0	7c396fd4830fd04220f754e42b4e5bff	3149	sao paulo	SP	-23.578333	-46.587123	sao paulo	SP
+2	e481f51cbdc54678b7cc49136f2d6af7	9ef432eb6251297304e76186b10a928d	delivered	2017-10-10 21:25:13	18.12	87285b34884572647811a353c7ac498a	3504c0cb71d7fa48d967e0e4c94d59d9	29.99	utilidades_domesticas	4.0	7c396fd4830fd04220f754e42b4e5bff	3149	sao paulo	SP	-23.575033	-46.587451	sao paulo	SP
+3	e481f51cbdc54678b7cc49136f2d6af7	9ef432eb6251297304e76186b10a928d	delivered	2017-10-10 21:25:13	18.12	87285b34884572647811a353c7ac498a	3504c0cb71d7fa48d967e0e4c94d59d9	29.99	utilidades_domesticas	4.0	7c396fd4830fd04220f754e42b4e5bff	3149	sao paulo	SP	-23.580054	-46.586673	sao paulo	SP
+4	e481f51cbdc54678b7cc49136f2d6af7	9ef432eb6251297304e76186b10a928d	delivered	2017-10-10 21:25:13	18.12	87285b34884572647811a353c7ac498a	3504c0cb71d7fa48d967e0e4c94d59d9	29.99	utilidades_domesticas	4.0	7c396fd4830fd04220f754e42b4e5bff	3149	sao paulo	SP	-23.576281	-46.587276	sao paulo	SP
+df_all.shape
+(11985284, 18)
+Missing values
+# Check for missing values
+
+df_all.isnull().sum()
+order_id                              0
+customer_id                           0
+order_status                          0
+order_delivered_customer_date    250317
+payment_value                         0
+product_id                            0
+seller_id                             0
+price                                 0
+product_category_name            170407
+product_photos_qty               170407
+customer_unique_id                    0
+customer_zip_code_prefix              0
+customer_city                         0
+customer_state                        0
+geolocation_lat                       0
+geolocation_lng                       0
+geolocation_city                      0
+geolocation_state                     0
+dtype: int64
+#Impute missing values with NULL
+
+df_all['product_category_name'].fillna("NULL", inplace=True)
+df_all['order_delivered_customer_date'].fillna("NULL", inplace=True)
+df_all['product_photos_qty'].fillna("NULL", inplace=True)
+# Check for missing values
+
+df_all.isnull().sum()
+
+# No missing values to handle
+order_id                         0
+customer_id                      0
+order_status                     0
+order_delivered_customer_date    0
+payment_value                    0
+product_id                       0
+seller_id                        0
+price                            0
+product_category_name            0
+product_photos_qty               0
+customer_unique_id               0
+customer_zip_code_prefix         0
+customer_city                    0
+customer_state                   0
+geolocation_lat                  0
+geolocation_lng                  0
+geolocation_city                 0
+geolocation_state                0
+dtype: int64
+Duplicates check
+dups = df_all.duplicated()
+dups.shape # No dups
+(11985284,)
+Extreme values checks
+sns.distplot(df_all['price'], bins=25) # Shows extreme values
+
+# Some of the outliers in the high values may need to be removed, but let's try without doing so first.
+/Users/ronaldcameron/opt/anaconda3/lib/python3.9/site-packages/seaborn/distributions.py:2619: FutureWarning: `distplot` is a deprecated function and will be removed in a future version. Please adapt your code to use either `displot` (a figure-level function with similar flexibility) or `histplot` (an axes-level function for histograms).
+  warnings.warn(msg, FutureWarning)
+<AxesSubplot:xlabel='price', ylabel='Density'>
+
+df_all['price'].mean() # Check the mean
+121.10462883248557
+df_all['price'].median() # Check the median
+74.99
+df_all['price'].max() # Check the max
+6735.0
+Hypothesis
+As the price per unit increases, the corresponding final payment value also increases.
+3. Data prep for regression analysis
+# Scatterplot using matplotlib
+
+df_all.plot(x = 'product_photos_qty', y='price',style='o') # The style option creates a scatterplot; without it, we only have lines.
+plt.title('Quantity of Photos vs Price')  
+plt.xlabel('product_photos_qty')  
+plt.ylabel('price')  
+plt.show()
+---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+/var/folders/8w/y0j0hy213tj11t4fgrr14y1h0000gn/T/ipykernel_8089/1353042574.py in <module>
+      2 
+      3 df_all.plot(x = 'product_photos_qty', y='price',style='o') # The style option creates a scatterplot; without it, we only have lines.
+----> 4 plt.title('Quantity of Photos vs Price')
+      5 plt.xlabel('product_photos_qty')
+      6 plt.ylabel('price')
+
+NameError: name 'plt' is not defined
+
+# Scatterplot using matplotlib
+
+df_all.plot(x = 'payment_value', y='price',style='o') # The style option creates a scatterplot; without it, we only have lines.
+plt.title('Payment Value vs Price')  
+plt.xlabel('payment_value')  
+plt.ylabel('price')  
+plt.show()
+---------------------------------------------------------------------------
+NameError                                 Traceback (most recent call last)
+/var/folders/8w/y0j0hy213tj11t4fgrr14y1h0000gn/T/ipykernel_8089/520284387.py in <module>
+      2 
+      3 df_all.plot(x = 'payment_value', y='price',style='o') # The style option creates a scatterplot; without it, we only have lines.
+----> 4 plt.title('Payment Value vs Price')
+      5 plt.xlabel('payment_value')
+      6 plt.ylabel('price')
+
+NameError: name 'plt' is not defined
+
+# Reshape the variables into NumPy arrays and put them into separate objects.
+
+X = df_all['payment_value'].values.reshape(-1,1)
+y = df_all['price'].values.reshape(-1,1)
+X
+array([[18.12],
+       [18.12],
+       [18.12],
+       ...,
+       [71.04],
+       [71.04],
+       [71.04]])
+y
+array([[29.99],
+       [29.99],
+       [29.99],
+       ...,
+       [55.9 ],
+       [55.9 ],
+       [55.9 ]])
+# Split data into a training set and a test set.
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+4. Regression analysis
+regression = LinearRegression()  
+regression.fit(X_train, y_train)
+
+LinearRegression
+LinearRegression()
+y_predicted = regression.predict(X_test)
+import matplotlib.pyplot as plt
+plot_test = plt
+plot_test.scatter(X_test, y_test, color='gray', s = 15)
+plot_test.plot(X_test, y_predicted, color='red', linewidth =3)
+plot_test.title('Payment Value vs Price per unit (Test set)')
+plot_test.xlabel('Payment Value')
+plot_test.ylabel('Price per unit')
+plot_test.show()
+
+There's strong negative correlation between the independent variable, 'Paymnet Value'increases,
+the dependent variable, 'Price' tends to decrease.
+The clustering at the bottom left suggests that most of the data points are concentrated in that region,
+forming a dense cluster or grouping. This clustering indicates a high degree of consistency or agreement
+in the relationship between the variables, suggesting that the linear fit is a good representation of the data.
+# Create objects that contain the model summary statistics.
+
+rmse = mean_squared_error(y_test, y_predicted) # This is the mean squared error
+r2 = r2_score(y_test, y_predicted) # This is the R2 score. 
+# Print the model summary statistics. This is where you evaluate the performance of the model.
+
+print('Slope:' ,regression.coef_)
+print('Mean squared error: ', rmse)
+print('R2 score: ', r2)
+Slope: [[0.53532365]]
+Mean squared error:  14757.974612143851
+R2 score:  0.5675383364192399
+y_predicted
+array([[124.85958336],
+       [ 55.08549869],
+       [ 53.78466222],
+       ...,
+       [ 32.32353706],
+       [ 51.2151087 ],
+       [ 76.20936996]])
+# Create a dataframe comparing the actual and predicted values of y.
+
+data = pd.DataFrame({'Actual': y_test.flatten(), 'Predicted': y_predicted.flatten()})
+data.head(30)
+Actual	Predicted
+0	157.41	124.859583
+1	35.00	55.085499
+2	19.90	53.784662
+3	26.40	48.265475
+4	29.90	53.051269
+5	129.99	146.995216
+6	11.04	42.328736
+7	109.90	95.652325
+8	24.90	64.175294
+9	229.90	557.058486
+10	25.79	80.855979
+11	64.99	73.072373
+12	66.90	72.472811
+13	44.85	62.713861
+14	39.90	57.173261
+15	39.90	58.613282
+16	598.40	361.146090
+17	49.90	100.095511
+18	180.00	129.741735
+19	58.00	74.116254
+20	53.88	99.827849
+21	39.00	72.997428
+22	29.00	47.954988
+23	79.90	78.998406
+24	45.49	57.044783
+25	29.90	48.527784
+26	119.94	196.143281
+27	39.00	57.767470
+28	89.90	82.408418
+29	46.75	63.051115
+Compare how the regression fits the training set
+# Predict.
+
+y_predicted_train = regression.predict(X_train) 
+rmse = mean_squared_error(y_train, y_predicted_train)
+r2 = r2_score(y_train, y_predicted_train)
+print('Slope:' ,regression.coef_)
+print('Mean squared error: ', rmse)
+print('R2 score: ', r2)
+Slope: [[0.53532365]]
+Mean squared error:  14650.462548308004
+R2 score:  0.5699302996878982
+# Visualizing the training set results.
+
+plot_test = plt
+plot_test.scatter(X_train, y_train, color='green', s = 15)
+plot_test.plot(X_train, y_predicted_train, color='red', linewidth =3)
+plot_test.title('Payment Value vs Price per Item')
+plot_test.xlabel('Payment Value')
+plot_test.ylabel('Price')
+plot_test.show()
+
+Although the R2 score is 0.57, the linear fit is slightly twarted by single item purchases.
+The predicted y values and the actual y values were minimally different. The actual R2 score was 0.5675383364192399
+and the predicted R2 score was 0.5699302996878982.
+The model behaved relatively well. I'm not sure that the model had any data bias since both variables were objective.
+ 
